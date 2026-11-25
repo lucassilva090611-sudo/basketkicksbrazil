@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catálogo de Tênis de Basquete</title>
+<style>
+:root{--bg:#f5f5f7;--card:#fff;--tx:#17171a;--mut:#6b6b76;--bd:#e0e0e6;--ac:#f26b1d;--gr:#1fa34a;--ye:#f5b800;--rd:#d93a3a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--card:#1c1c20;--tx:#f0f0f3;--mut:#9a9aa6;--bd:#2c2c33;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121214;--card:#1c1c20;--tx:#f0f0f3;--mut:#9a9aa6;--bd:#2c2c33;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+h1{font-size:18px;margin:0}h1 span{color:var(--ac)}
+main{max-width:1000px;margin:0 auto;padding:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:9px 10px;width:100%}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:8px;padding:8px 12px}
+.pri{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;max-width:380px;margin:30px auto}
+.box h2{margin-top:0}.box input{margin-bottom:10px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.tabs button{white-space:nowrap}.tabs .on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.card img{width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:var(--bg)}
+.card h3{margin:0;font-size:17px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}.tag{font-size:12px;background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:1px 8px}
+.meta{display:flex;justify-content:space-between;color:var(--mut);font-size:13px}
+.desc{color:var(--mut);font-size:14px;margin:0}
+.rt{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:13px}
+.st{color:var(--ye);letter-spacing:1px;white-space:nowrap}.st i{color:var(--bd);font-style:normal}
+.acts{display:flex;gap:8px;margin-top:auto}
+.cat{flex:1;background:var(--gr);border-color:var(--gr);color:#fff;font-weight:600}
+.cat.has{background:transparent;color:var(--gr)}
+.fav{font-size:20px;line-height:1;color:var(--mut);padding:6px 11px}.fav.on{color:var(--ye);border-color:var(--ye)}
+.del{color:var(--rd);border-color:var(--rd)}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.form{display:grid;gap:10px;max-width:560px}
+.sr{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sr .stars span{font-size:24px;cursor:pointer;color:var(--bd);padding:0 2px}.sr .stars span.f{color:var(--ye)}
+.rank{list-style:none;padding:0;max-width:480px}
+.rank li{display:flex;justify-content:space-between;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin-bottom:6px}
+#toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 14px;border-radius:8px;display:none;z-index:9;max-width:90%}
+.err{color:var(--rd);font-size:14px;min-height:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏀 Catálogo de <span>Tênis de Basquete</span></h1>
+  <div id="user"></div>
+</header>
+<main id="app"></main>
+<div id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// COLE AQUI a configuração do seu projeto Firebase (Configurações do projeto > Seus apps > Web)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA6gxNWCXTu0tt5iPm46xZHnecJPF7y1os",
+  authDomain: "basketkicksbr.firebaseapp.com",
+  projectId: "basketkicksbr",
+  storageBucket: "basketkicksbr.firebasestorage.app",
+  messagingSenderId: "658225698478",
+  appId: "1:658225698478:web:2fdc10b82efbea064e3f3f"
+};
+const ADMIN_NICK = 'LAGDS';
+const ADMIN_HASH = '13b36bae3af378a8d618220cb013b8ea4dfa8b4db1cd5f529e6c25c95f023caa';
+const CRIT = [['amortecimento','Amortecimento'],['tracao','Tração'],['suporte','Suporte'],['fit','Fit'],['impulsao','Impulsão'],['responsividade','Responsividade'],['flexibilidade','Flexibilidade'],['durabilidade','Durabilidade']];
+
+let db = null, me = null;
+let sneakers = [], ownedAll = {}, ownedMine = new Set(), favMine = new Set();
+let tab = 'catalogo', F = {q:'', brand:'', athlete:'', tech:''};
+let unsubs = [], formRatings = {}, formImg = '';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = n => n.toLowerCase();
+async function sha(t){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,'0')).join(''); }
+const mkHash = (nick, pass) => sha(nick.toUpperCase() + ':' + pass);
+function toast(m){ const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 3200); }
+function stars(n){ n = +n || 0; return '<span class="st">' + '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i></span>'; }
+
+/* ---------- sessão (apenas durante a aba aberta) ---------- */
+function saveSession(s){ try { s ? sessionStorage.setItem('tn_sess', JSON.stringify(s)) : sessionStorage.removeItem('tn_sess'); } catch(e){} }
+function loadSession(){ try { return JSON.parse(sessionStorage.getItem('tn_sess')); } catch(e){ return null; } }
+
+/* ---------- init ---------- */
+async function init(){
+  renderLogin('Conectando…');
+  try { if (FIREBASE_CONFIG.apiKey === 'COLE_AQUI') throw 0; firebase.initializeApp(FIREBASE_CONFIG); db = firebase.firestore(); } catch(e){ db = null; }
+  if (!db){ renderLogin('Banco de dados não configurado. Cole a config do Firebase no código.'); return; }
+  const s = loadSession();
+  if (s){ const ok = await verify(s.nick, s.hash); if (ok){ startSession(s.nick); return; } }
+  renderLogin('');
+}
+async function verify(nick, hash){
+  if (nick.toUpperCase() === ADMIN_NICK) return hash === ADMIN_HASH;
+  try { const d = await db.doc('users/' + uid(nick)).get(); return d.exists && d.data().hash === hash; } catch(e){ return false; }
+}
+
+/* ---------- login / cadastro ---------- */
+function renderLogin(msg, mode){
+  mode = mode || 'login';
+  $('#user').innerHTML = '';
+  $('#app').innerHTML = `<div class="box"><h2>${mode === 'login' ? 'Entrar' : 'Criar conta'}</h2>
+    <input id="nk" placeholder="Nickname" autocomplete="username" maxlength="20">
+    <input id="pw" type="password" placeholder="Senha" autocomplete="current-password">
+    <div class="err" id="er">${esc(msg || '')}</div>
+    <button class="pri" id="go" style="width:100%">${mode === 'login' ? 'Entrar' : 'Cadastrar'}</button>
+    <p style="text-align:center;margin:12px 0 0"><a href="#" id="sw">${mode === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tenho conta'}</a></p></div>`;
+  $('#sw').onclick = e => { e.preventDefault(); renderLogin('', mode === 'login' ? 'reg' : 'login'); };
+  $('#pw').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
+  $('#go').onclick = async () => {
+    if (!db) return;
+    const nick = $('#nk').value.trim(), pass = $('#pw').value, er = $('#er');
+    if (!/^[A-Za-z0-9_.-]{3,20}$/.test(nick)) return er.textContent = 'Nickname: 3 a 20 caracteres (letras, números, _ . -).';
+    if (pass.length < 4) return er.textContent = 'A senha precisa ter ao menos 4 caracteres.';
+    const hash = await mkHash(nick, pass);
+    if (mode === 'login'){
+      if (!(await verify(nick, hash))) return er.textContent = 'Nickname ou senha incorretos.';
+      const real = nick.toUpperCase() === ADMIN_NICK ? ADMIN_NICK : nick;
+      saveSession({nick: real, hash}); startSession(real);
+    } else {
+      if (nick.toUpperCase() === ADMIN_NICK) return er.textContent = 'Esse nickname é reservado.';
+      try {
+        const d = await db.doc('users/' + uid(nick)).get();
+        if (d.exists) return er.textContent = 'Esse nickname já existe.';
+        await db.doc('users/' + uid(nick)).set({nick, hash});
+        saveSession({nick, hash}); startSession(nick);
+      } catch(e){ er.textContent = 'Não foi possível cadastrar (a página precisa de acesso de Colaborador para gravar).'; }
+    }
+  };
+}
+function logout(){ unsubs.forEach(u => { try { u(); } catch(e){} }); unsubs = []; me = null; saveSession(null); sneakers = []; ownedAll = {}; ownedMine = new Set(); favMine = new Set(); renderLogin(''); }
+
+/* ---------- dados em tempo real ---------- */
+function startSession(nick){
+  me = {nick, admin: nick.toUpperCase() === ADMIN_NICK};
+  tab = 'catalogo'; F = {q:'', brand:'', athlete:'', tech:''};
+  const key = uid(nick);
+  unsubs.push(db.collection('sneakers').onSnapshot(s => { sneakers = s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.created||0) - (a.created||0)); render(); }, e => toast('Erro ao carregar os tênis.')));
+  unsubs.push(db.collection('owned').onSnapshot(s => {
+    ownedAll = {}; ownedMine = new Set();
+    s.docs.forEach(d => { const x = d.data(); ownedAll[x.nick || d.id] = (x.ids || []).length; if (d.id === key) ownedMine = new Set(x.ids || []); });
+    render();
+  }, () => {}));
+  unsubs.push(db.doc('favs/' + key).onSnapshot(d => { favMine = new Set(d.exists ? (d.data().ids || []) : []); render(); }, () => {}));
+  render();
+}
+async function toggle(kind, id){
+  const set = kind === 'owned' ? ownedMine : favMine;
+  const next = new Set(set); next.has(id) ? next.delete(id) : next.add(id);
+  try {
+    if (kind === 'owned') await db.doc('owned/' + uid(me.nick)).set({nick: me.nick, ids: [...next]});
+    else await db.doc('favs/' + uid(me.nick)).set({ids: [...next]});
+  } catch(e){ toast('Não foi possível salvar (precisa de acesso de Colaborador).'); }
+}
+
+/* ---------- render ---------- */
+function render(){
+  if (!me) return;
+  $('#user').innerHTML = `<span style="margin-right:8px">👤 <b>${esc(me.nick)}</b>${me.admin ? ' · admin' : ''}</span><button id="lo">Sair</button>`;
+  $('#lo').onclick = logout;
+  const tabs = [['catalogo','Catálogo'],['catalogados','Catalogados (' + countIn(ownedMine) + ')'],['favoritos','Favoritos (' + countIn(favMine) + ')'],['ranking','Ranking']];
+  if (me.admin) tabs.push(['admin','+ Adicionar tênis']);
+  const active = document.activeElement && document.activeElement.id;
+  const keepFilters = $('#fl') && tab !== 'admin' && tab !== 'ranking';
+  let h = '<div class="tabs">' + tabs.map(t => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${esc(t[1])}</button>`).join('') + '</div>';
+  if (tab === 'admin') h += '<div id="body"></div>';
+  else if (tab === 'ranking') h += '<div id="body"></div>';
+  else h += filtersHtml() + '<div id="body"></div>';
+  if (tab === 'admin' && $('#fname')) { /* preserva formulário já aberto */ $('.tabs').innerHTML = h.match(/<div class="tabs">([\s\S]*?)<\/div>/)[1]; bindTabs(); return; }
+  $('#app').innerHTML = h; bindTabs();
+  if (tab === 'admin') adminForm();
+  else if (tab === 'ranking') rankView();
+  else { bindFilters(); list(); if (active === 'q'){ const q = $('#q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
+}
+function countIn(set){ return sneakers.filter(s => set.has(s.id)).length; }
+function bindTabs(){ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; formRatings = {}; formImg = ''; $('#fname') && $('#fname').remove(); render(); }); }
+function uniq(f){ return [...new Set(sneakers.map(s => (s[f] || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b)); }
+function filtersHtml(){
+  const opt = (f, label, cur) => `<select data-f="${f}"><option value="">${label}</option>${uniq(f).map(v => `<option ${v === cur ? 'selected' : ''} value="${esc(v)}">${esc(v)}</option>`).join('')}</select>`;
+  return `<div class="filters" id="fl"><input id="q" placeholder="🔎 Buscar por nome…" value="${esc(F.q)}">${opt('brand','Todas as marcas',F.brand)}${opt('athlete','Todos os atletas',F.athlete)}${opt('tech','Todas as tecnologias',F.tech)}</div>`;
+}
+function bindFilters(){
+  $('#q').oninput = e => { F.q = e.target.value; list(); };
+  document.querySelectorAll('#fl select').forEach(s => s.onchange = () => { F[s.dataset.f] = s.value; list(); });
+}
+function list(){
+  let arr = sneakers;
+  if (tab === 'catalogados') arr = arr.filter(s => ownedMine.has(s.id));
+  if (tab === 'favoritos') arr = arr.filter(s => favMine.has(s.id));
+  const q = F.q.toLowerCase();
+  arr = arr.filter(s => (!q || (s.name||'').toLowerCase().includes(q)) && (!F.brand || s.brand === F.brand) && (!F.athlete || s.athlete === F.athlete) && (!F.tech || s.tech === F.tech));
+  const b = $('#body');
+  if (!arr.length){
+    b.innerHTML = '<div class="empty">' + (sneakers.length ? 'Nenhum tênis encontrado aqui.' : 'Nenhum tênis cadastrado ainda.') + '</div>'; return;
+  }
+  b.innerHTML = '<div class="grid">' + arr.map(card).join('') + '</div>';
+  b.querySelectorAll('[data-own]').forEach(x => x.onclick = () => toggle('owned', x.dataset.own));
+  b.querySelectorAll('[data-fav]').forEach(x => x.onclick = () => toggle('fav', x.dataset.fav));
+  b.querySelectorAll('[data-del]').forEach(x => x.onclick = async () => { if (confirm('Excluir este tênis para todos os usuários?')) { try { await db.doc('sneakers/' + x.dataset.del).delete(); } catch(e){ toast('Erro ao excluir.'); } } });
+}
+function card(s){
+  const has = ownedMine.has(s.id), fv = favMine.has(s.id), r = s.ratings || {};
+  return `<div class="card">${s.img ? `<img alt="" src="${esc(s.img)}">` : ''}
+    <h3>${esc(s.name)}</h3>
+    <div class="tags">${s.brand ? `<span class="tag">${esc(s.brand)}</span>` : ''}${s.athlete ? `<span class="tag">🏀 ${esc(s.athlete)}</span>` : ''}${s.tech ? `<span class="tag">⚙ ${esc(s.tech)}</span>` : ''}</div>
+    <div class="meta"><span>${s.year ? 'Lançamento: ' + esc(s.year) : ''}</span><b>${esc(s.price || '')}</b></div>
+    ${s.desc ? `<p class="desc">${esc(s.desc)}</p>` : ''}
+    <div class="rt">${CRIT.map(c => `<span>${c[1]}</span>${stars(r[c[0]])}`).join('')}</div>
+    <div class="acts"><button class="cat ${has ? 'has' : ''}" data-own="${esc(s.id)}">${has ? '✔ Catalogado' : 'Catalogar'}</button>
+    <button class="fav ${fv ? 'on' : ''}" title="Favoritar" data-fav="${esc(s.id)}">${fv ? '★' : '☆'}</button>
+    ${me.admin ? `<button class="del" data-del="${esc(s.id)}">🗑</button>` : ''}</div></div>`;
+}
+
+/* ---------- ranking ---------- */
+function rankView(){
+  const arr = Object.entries(ownedAll).filter(e => e[1] > 0).sort((a,b) => b[1] - a[1]).slice(0, 20);
+  $('#body').innerHTML = '<h2>🏆 Ranking de colecionadores</h2>' + (arr.length
+    ? '<ol class="rank">' + arr.map((e,i) => `<li><span>${['🥇','🥈','🥉'][i] || (i + 1) + 'º'} ${esc(e[0])}</span><b>${e[1]} tênis</b></li>`).join('') + '</ol>'
+    : '<div class="empty">Ninguém catalogou tênis ainda.</div>');
+}
+
+/* ---------- admin ---------- */
+function adminForm(){
+  $('#body').innerHTML = `<div class="form" id="fname"><h2 style="margin:6px 0">Adicionar tênis</h2>
+    <input id="a_name" placeholder="Nome do tênis *"><input id="a_brand" placeholder="Marca">
+    <input id="a_ath" placeholder="Atleta de assinatura"><input id="a_tech" placeholder="Tecnologia (ex.: Zoom Air, Boost…)">
+    <textarea id="a_desc" rows="3" placeholder="Descrição básica"></textarea>
+    <input id="a_year" type="number" placeholder="Ano de lançamento" min="1950" max="2100"><input id="a_price" placeholder="Preço (ex.: R$ 899 ou US$ 160)">
+    <div>${CRIT.map(c => `<div class="sr"><span>${c[1]}</span><span class="stars" data-k="${c[0]}"></span></div>`).join('')}</div>
+    <label>Foto do tênis (opcional)<input id="a_img" type="file" accept="image/*"></label>
+    <img id="a_prev" alt="" style="display:none;max-height:140px;object-fit:contain">
+    <button class="pri" id="a_save">Salvar tênis</button></div>`;
+  formRatings = {}; formImg = '';
+  document.querySelectorAll('.stars').forEach(el => paintStars(el));
+  $('#a_img').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { formImg = await shrink(f); const p = $('#a_prev'); p.src = formImg; p.style.display = 'block'; } catch(x){ formImg = ''; toast('Não foi possível ler a imagem.'); }
+  };
+  $('#a_save').onclick = saveSneaker;
+}
+function paintStars(el){
+  const k = el.dataset.k, v = formRatings[k] || 0;
+  el.innerHTML = [1,2,3,4,5].map(n => `<span class="${n <= v ? 'f' : ''}" data-n="${n}">★</span>`).join('');
+  el.querySelectorAll('span').forEach(sp => sp.onclick = () => { const n = +sp.dataset.n; formRatings[k] = (formRatings[k] === n) ? 0 : n; paintStars(el); });
+}
+function shrink(file){
+  return new Promise((res, rej) => {
+    const im = new Image(), u = URL.createObjectURL(file);
+    im.onload = () => {
+      const m = 480, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', 0.75));
+    };
+    im.onerror = rej; im.src = u;
+  });
+}
+async function saveSneaker(){
+  const name = $('#a_name').value.trim();
+  if (!name) return toast('Informe o nome do tênis.');
+  const ratings = {}; CRIT.forEach(c => ratings[c[0]] = formRatings[c[0]] || 0);
+  const data = { name, brand: $('#a_brand').value.trim(), athlete: $('#a_ath').value.trim(), tech: $('#a_tech').value.trim(), desc: $('#a_desc').value.trim(), year: $('#a_year').value.trim(), price: $('#a_price').value.trim(), ratings, img: formImg, created: Date.now() };
+  try { await db.collection('sneakers').add(data); toast('Tênis adicionado para todos! ✅'); adminForm(); }
+  catch(e){ toast('Erro ao salvar: ' + (e && e.code === 'quota_exceeded' ? 'limite atingido.' : 'verifique suas permissões.')); }
+}
+
+init();
+</script>
+</body>
+</html>
